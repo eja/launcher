@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Launcher"
+rootProject.name = "ejaLauncher"
 include(":app")
