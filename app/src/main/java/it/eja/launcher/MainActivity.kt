@@ -46,6 +46,8 @@ class MainActivity : Activity() {
         loadPreferences()
     }
 
+    override fun onBackPressed() {}
+
     override fun onPause() {
         super.onPause()
         savePreferences()
@@ -60,6 +62,7 @@ class MainActivity : Activity() {
     }
 
     private fun setupUI() {
+        window.setStatusBarColor(Color.TRANSPARENT);
         setupHalfScreenView()
         setupGridLayout()
     }
@@ -92,9 +95,10 @@ class MainActivity : Activity() {
     }
 
     private fun pickImageFromGallery() {
-        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
-            type = "image/*"
-        }
+        val intent =
+            Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
+                type = "image/*"
+            }
         if (intent.resolveActivity(packageManager) != null) {
             startActivityForResult(intent, 1)
         } else {
@@ -102,12 +106,21 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun createAppButton(info: ResolveInfo, packageManager: PackageManager, buttonWidth: Int): Button {
+    private fun createAppButton(
+        info: ResolveInfo,
+        packageManager: PackageManager,
+        buttonWidth: Int
+    ): Button {
         val appName = info.loadLabel(packageManager).toString()
         val appIcon = info.loadIcon(packageManager)
         return Button(this).apply {
             layoutParams = ViewGroup.LayoutParams(buttonWidth, ViewGroup.LayoutParams.WRAP_CONTENT)
-            setCompoundDrawablesWithIntrinsicBounds(null, getResizedDrawable(appIcon, iconSize), null, null)
+            setCompoundDrawablesWithIntrinsicBounds(
+                null,
+                getResizedDrawable(appIcon, iconSize),
+                null,
+                null
+            )
             compoundDrawablePadding = marginPx
             text = appName
             gravity = Gravity.CENTER
@@ -134,7 +147,7 @@ class MainActivity : Activity() {
         val rectF = RectF(0f, 0f, size.toFloat(), size.toFloat())
         canvas.drawRoundRect(rectF, cornerRadius, cornerRadius, paint)
 
-        val iconSize = (size * 0.9).toInt()
+        val iconSize = (size * 0.75).toInt()
         val left = (size - iconSize) / 2
         val top = (size - iconSize) / 2
         val right = left + iconSize
@@ -156,7 +169,8 @@ class MainActivity : Activity() {
 
     private fun startDrag(view: View, originalIndex: Int): Boolean {
         val item = ClipData.Item(view.tag as? CharSequence)
-        val dragData = ClipData(view.tag as? CharSequence, arrayOf(ClipDescription.MIMETYPE_TEXT_PLAIN), item)
+        val dragData =
+            ClipData(view.tag as? CharSequence, arrayOf(ClipDescription.MIMETYPE_TEXT_PLAIN), item)
 
         val myShadow = View.DragShadowBuilder(view)
         view.startDragAndDrop(dragData, myShadow, view, 0)
