@@ -53,6 +53,11 @@ class MainActivity : Activity() {
 
     override fun onBackPressed() {}
 
+    override fun onResume() {
+        super.onResume()
+        loadPreferences()
+    }
+
     override fun onPause() {
         super.onPause()
         savePreferences()
@@ -294,12 +299,27 @@ class MainActivity : Activity() {
             val apps = getInstalledApps()
             val buttonWidth = (screenWidth - (GRID_COLUMN_COUNT + 1) * marginPx) / GRID_COLUMN_COUNT
             gridLayout.removeAllViews()
+
             for (appName in iconPositions) {
-                val info = apps.find { appInfo -> appInfo.loadLabel(packageManager).toString() == appName }
+                val info =
+                    apps.find { appInfo -> appInfo.loadLabel(packageManager).toString() == appName }
                 if (info != null) {
                     val button = createAppButton(info, packageManager, buttonWidth)
                     button.setOnLongClickListener {
                         startMenuOrDrag(it, apps.indexOf(info))
+                        true
+                    }
+                    gridLayout.addView(button)
+                }
+            }
+
+            val installedApps = getInstalledApps()
+            for (appInfo in installedApps) {
+                val appName = appInfo.loadLabel(packageManager).toString()
+                if (!iconPositions.contains(appName)) {
+                    val button = createAppButton(appInfo, packageManager, buttonWidth)
+                    button.setOnLongClickListener {
+                        startMenuOrDrag(it, installedApps.indexOf(appInfo))
                         true
                     }
                     gridLayout.addView(button)
