@@ -12,38 +12,43 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.view.*
 import android.widget.*
 import androidx.core.content.ContextCompat
 import kotlin.math.roundToInt
+import android.provider.Settings
 
 class MainActivity : Activity() {
-
     private val GRID_COLUMN_COUNT = 4
     private val ICON_SIZE_DP = 64
     private val MARGIN_DP = 8
-    private val PREFS_NAME = "ejaLauncher"
-    private lateinit var sharedPreferences: SharedPreferences
     private var selectedImageUri: Uri? = null
+    private lateinit var sharedPreferences: SharedPreferences
+    private var isDragging = false
     private lateinit var halfScreenView: View
     private lateinit var gridLayout: GridLayout
     private val displayMetrics by lazy { resources.displayMetrics }
     private val iconSize by lazy { dpToPx(ICON_SIZE_DP) }
     private val marginPx by lazy { dpToPx(MARGIN_DP) }
     private val screenWidth by lazy { displayMetrics.widthPixels }
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         setContentView(R.layout.activity_main)
 
-        sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("eja_preferences", MODE_PRIVATE)
         halfScreenView = findViewById(R.id.half_screen_view)
         gridLayout = findViewById(R.id.grid_layout)
 
+        if (!isDefaultLauncher()) {
+            promptToSetDefaultLauncher()
+        }
         setupUI()
-        loadPreferences()
     }
 
     override fun onBackPressed() {}
@@ -61,6 +66,26 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun isDefaultLauncher(): Boolean {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val resolveInfo = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        val currentLauncherPackageName = resolveInfo?.activityInfo?.packageName
+        return currentLauncherPackageName == packageName
+    }
+
+    private fun promptToSetDefaultLauncher() {
+        val intent = Intent(Settings.ACTION_HOME_SETTINGS)
+        if (intent.resolveActivity(packageManager) != null) {
+            startActivity(intent)
+        } else {
+            Toast.makeText(
+                this,
+                "Please set the launcher manually in the device settings.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
     private fun setupUI() {
         window.setStatusBarColor(Color.TRANSPARENT);
         setupHalfScreenView()
@@ -75,22 +100,34 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun setupGridLayout() {
-        gridLayout.setOnDragListener(DragListener())
-
+    private fun getInstalledApps(): List<ResolveInfo> {
         val packageManager = packageManager
         val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
         }
-        val apps = packageManager.queryIntentActivities(mainIntent, PackageManager.GET_META_DATA)
+        return packageManager.queryIntentActivities(mainIntent, PackageManager.GET_META_DATA)
             .sortedBy { it.loadLabel(packageManager).toString() }
+    }
 
-        val buttonWidth = (screenWidth - (GRID_COLUMN_COUNT + 1) * marginPx) / GRID_COLUMN_COUNT
+    private fun setupGridLayout() {
+        gridLayout.setOnDragListener(DragListener())
 
-        apps.forEachIndexed { index, info ->
-            val button = createAppButton(info, packageManager, buttonWidth)
-            button.setOnLongClickListener { startDrag(it, index) }
-            gridLayout.addView(button)
+        val iconPositions = sharedPreferences.getString("iconPositions", null)
+        if (iconPositions != null) {
+            loadPreferences()
+        } else {
+            val apps = getInstalledApps()
+
+            val buttonWidth = (screenWidth - (GRID_COLUMN_COUNT + 1) * marginPx) / GRID_COLUMN_COUNT
+
+            apps.forEachIndexed { index, info ->
+                val button = createAppButton(info, packageManager, buttonWidth)
+                button.setOnLongClickListener {
+                    startMenuOrDrag(it, index)
+                    true
+                }
+                gridLayout.addView(button)
+            }
         }
     }
 
@@ -129,6 +166,57 @@ class MainActivity : Activity() {
             setOnClickListener { launchApp(info) }
             isAllCaps = false
         }
+    }
+
+    private fun startMenuOrDrag(view: View, index: Int): Boolean {
+        isDragging = false
+        handler.postDelayed({
+            if (!isDragging) {
+                showPopupMenu(view, index)
+            }
+        }, 500) // Delay before showing the menu
+        view.setOnTouchListener { v, event ->
+            if (event.action == MotionEvent.ACTION_MOVE) {
+                isDragging = true
+                view.setOnTouchListener(null)
+                startDrag(v, index)
+            }
+            false
+        }
+        return true
+    }
+
+    private fun showPopupMenu(view: View, index: Int): Boolean {
+        val popupMenu = PopupMenu(this, view)
+        popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
+        popupMenu.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_move_to_top -> {
+                    moveIcon(view, true)
+                    true
+                }
+
+                R.id.action_move_to_bottom -> {
+                    moveIcon(view, false)
+                    true
+                }
+
+                else -> false
+            }
+        }
+        popupMenu.show()
+        return true
+    }
+
+    private fun moveIcon(view: View, moveToTop: Boolean) {
+        val parent = view.parent as GridLayout
+        parent.removeView(view)
+        if (moveToTop) {
+            parent.addView(view, 0)
+        } else {
+            parent.addView(view)
+        }
+        savePreferences()
     }
 
     private fun dpToPx(dp: Int): Int {
@@ -192,11 +280,30 @@ class MainActivity : Activity() {
         val backgroundImageUriString = sharedPreferences.getString("backgroundImageUri", null)
         backgroundImageUriString?.let {
             try {
-                val uri = Uri.parse(it)
-                val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+                selectedImageUri = Uri.parse(it)
+                val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, selectedImageUri)
                 window.setBackgroundDrawable(BitmapDrawable(resources, bitmap))
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+
+        val iconPositionsString = sharedPreferences.getString("iconPositions", null)
+        iconPositionsString?.let {
+            val iconPositions = it.split(",")
+            val apps = getInstalledApps()
+            val buttonWidth = (screenWidth - (GRID_COLUMN_COUNT + 1) * marginPx) / GRID_COLUMN_COUNT
+            gridLayout.removeAllViews()
+            for (appName in iconPositions) {
+                val info = apps.find { appInfo -> appInfo.loadLabel(packageManager).toString() == appName }
+                if (info != null) {
+                    val button = createAppButton(info, packageManager, buttonWidth)
+                    button.setOnLongClickListener {
+                        startMenuOrDrag(it, apps.indexOf(info))
+                        true
+                    }
+                    gridLayout.addView(button)
+                }
             }
         }
     }
@@ -204,9 +311,18 @@ class MainActivity : Activity() {
     private fun savePreferences() {
         with(sharedPreferences.edit()) {
             putString("backgroundImageUri", selectedImageUri?.toString())
+            val iconPositions = mutableListOf<String>()
+            for (i in 0 until gridLayout.childCount) {
+                val view = gridLayout.getChildAt(i) as Button
+                val appName = view.text.toString()
+                iconPositions.add(appName)
+            }
+            val iconPositionsString = iconPositions.joinToString(",")
+            putString("iconPositions", iconPositionsString)
             apply()
         }
     }
+
 
     private inner class DragListener : View.OnDragListener {
         override fun onDrag(v: View, event: DragEvent): Boolean {
