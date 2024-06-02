@@ -37,7 +37,7 @@ jobs:
 
       - name: Copy
         run: |
-          cp app/build/outputs/bundle/release/app-release.aab app-release.aab
+          cp app/build/outputs/bundle/release/app-release.aab ${GITHUB_REPOSITORY#*/}.aab
 
       - name: Build APK
         run: |
@@ -58,13 +58,13 @@ jobs:
 
       - name: Copy
         run: |
-          cp app/build/outputs/apk/release/app-release-unsigned-signed.apk app-release.apk
+          cp app/build/outputs/apk/release/app-release-unsigned-signed.apk ${GITHUB_REPOSITORY#*/}.apk
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            app-release.apk
-            app-release.aab
+            ${GITHUB_REPOSITORY#*/}.apk
+            ${GITHUB_REPOSITORY#*/}.aab
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
