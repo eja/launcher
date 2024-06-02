@@ -4,6 +4,12 @@
         android:id="@+id/action_move_to_top"
         android:title="\u21F1 Top" />
     <item
+        android:id="@+id/action_move_to_left"
+        android:title="\u2190 Left" />
+    <item
+        android:id="@+id/action_move_to_right"
+        android:title="\u2192 Right" />
+    <item
         android:id="@+id/action_move_to_bottom"
         android:title="\u21F2 Bottom" />
 </menu>

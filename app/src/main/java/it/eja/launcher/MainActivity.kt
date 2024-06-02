@@ -93,6 +93,7 @@ class MainActivity : Activity() {
 
     private fun setupUI() {
         window.setStatusBarColor(Color.TRANSPARENT);
+        window.setNavigationBarColor(Color.TRANSPARENT)
         setupHalfScreenView()
         setupGridLayout()
     }
@@ -197,30 +198,44 @@ class MainActivity : Activity() {
         popupMenu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_move_to_top -> {
-                    moveIcon(view, true)
+                    moveIcon(view, "top")
                     true
                 }
-
                 R.id.action_move_to_bottom -> {
-                    moveIcon(view, false)
+                    moveIcon(view, "bottom")
+                    true
+                }
+                R.id.action_move_to_left -> {
+                    moveIcon(view, "left")
+                    true
+                }
+                R.id.action_move_to_right -> {
+                    moveIcon(view, "right")
                     true
                 }
 
                 else -> false
             }
         }
+        popupMenu.setOnDismissListener {
+            view.visibility = View.VISIBLE
+        }
         popupMenu.show()
         return true
     }
 
-    private fun moveIcon(view: View, moveToTop: Boolean) {
+    private fun moveIcon(view: View, direction: String) {
         val parent = view.parent as GridLayout
-        parent.removeView(view)
-        if (moveToTop) {
-            parent.addView(view, 0)
-        } else {
-            parent.addView(view)
+        val currentIndex = parent.indexOfChild(view)
+        val newIndex = when (direction) {
+            "top" -> 0
+            "bottom" -> parent.childCount - 1
+            "left" -> maxOf(currentIndex - 1, 0)
+            "right" -> minOf(currentIndex + 1, parent.childCount - 1)
+            else -> return // Invalid direction, do nothing
         }
+        parent.removeView(view)
+        parent.addView(view, newIndex)
         savePreferences()
     }
 
