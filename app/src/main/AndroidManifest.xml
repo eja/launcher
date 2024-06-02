@@ -7,18 +7,16 @@
 
 
     <application
-        android:allowBackup="true"
         android:label="ejaLauncher"
         android:icon="@drawable/logo"
         android:roundIcon="@drawable/logo"
+        android:allowBackup="true"
         android:supportsRtl="true"
         android:screenOrientation="portrait"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
-
         <activity
             android:name=".MainActivity"
-            android:exported="true"
-            android:label="ejaLauncher">
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
