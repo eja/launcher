@@ -11,8 +11,8 @@ android {
         applicationId = "it.eja.launcher"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.6.2"
+        versionCode = 4
+        versionName = "1.6.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
