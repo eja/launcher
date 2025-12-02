@@ -7,7 +7,7 @@
 
 
     <application
-        android:label="ejaLauncher"
+        android:label="Launcher"
         android:icon="@drawable/logo"
         android:roundIcon="@drawable/logo"
         android:allowBackup="true"

@@ -4,13 +4,15 @@
         android:id="@+id/action_move_to_top"
         android:title="\u21F1 Top" />
     <item
-        android:id="@+id/action_move_to_left"
-        android:title="\u2190 Left" />
+        android:id="@+id/action_move_up"
+        android:title="\u2191 Up" />
     <item
-        android:id="@+id/action_move_to_right"
-        android:title="\u2192 Right" />
+        android:id="@+id/action_move_down"
+        android:title="\u2193 Down" />
     <item
         android:id="@+id/action_move_to_bottom"
         android:title="\u21F2 Bottom" />
+    <item
+        android:id="@+id/action_app_settings"
+        android:title="\u2699 Settings" />
 </menu>
-

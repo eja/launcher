@@ -5,14 +5,14 @@ plugins {
 
 android {
     namespace = "it.eja.launcher"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "it.eja.launcher"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 4
-        versionName = "1.6.3"
+        targetSdk = 35
+        versionCode = 5
+        versionName = "2.12.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
